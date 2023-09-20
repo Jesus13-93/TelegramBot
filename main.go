@@ -4,20 +4,30 @@ import (
 	tgClient "TelegramBot/clients/telegram"
 	event_consumer "TelegramBot/consumer/event-consumer"
 	"TelegramBot/events/telegram"
-	"TelegramBot/storage/files"
+	"TelegramBot/storage/sqlite"
+	"context"
 	"flag"
 	"log"
 )
 
 const (
-	tgBotHost   = "api.telegram.org"
-	storagePath = "files_storage"
-	batchSize   = 100
+	tgBotHost      = "api.telegram.org"
+	sqlStoragePath = "data/sqlite/storage.db"
+	batchSize      = 100
 )
 
 func main() {
 
-	eventsProcessor := telegram.New(tgClient.New(tgBotHost, mustToken()), files.New(storagePath))
+	s, err := sqlite.New(sqlStoragePath)
+	if err != nil {
+		log.Fatal("can't connect to the storage: ", err)
+	}
+
+	if err := s.Init(context.TODO()); err != nil {
+		log.Fatal("can't init storage", err)
+	}
+
+	eventsProcessor := telegram.New(tgClient.New(tgBotHost, mustToken()), s)
 
 	log.Print("service started")
 
