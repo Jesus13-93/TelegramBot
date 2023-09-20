@@ -28,7 +28,7 @@ func New(path string) (*Storage, error) {
 
 // Save saves page to storage
 func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
-	q := `Insert into pages (url, username) values (?,?)`
+	q := `Insert into pages (url, user_name) values (?,?)`
 
 	if _, err := s.db.ExecContext(ctx, q, p.URL, p.UserName); err != nil {
 		return fmt.Errorf("can't save page: %w", err)
