@@ -38,11 +38,11 @@ func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
 
 // PickRandom picks random page from storage
 func (s *Storage) PickRandom(ctx context.Context, userName string, idUser int) (*storage.Page, error) {
-	q := `SELECT url from pages where user_name = ? and id_user = ? order by RANDOM() LIMIT 1`
+	q := `SELECT url from pages where id_user = ? order by RANDOM() LIMIT 1`
 
 	var url string
 
-	err := s.db.QueryRowContext(ctx, q, userName, idUser).Scan(&url)
+	err := s.db.QueryRowContext(ctx, q, idUser).Scan(&url)
 	if err == sql.ErrNoRows {
 		return nil, storage.ErrNoSavedPages
 	}
@@ -59,9 +59,9 @@ func (s *Storage) PickRandom(ctx context.Context, userName string, idUser int) (
 
 // Remove removes page from storage
 func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
-	q := `Delete from pages where url = ? and user_name = ? and id_user = ?`
+	q := `Delete from pages where url = ? and id_user = ?`
 
-	if _, err := s.db.ExecContext(ctx, q, page.URL, page.UserName, page.IdUser); err != nil {
+	if _, err := s.db.ExecContext(ctx, q, page.URL, page.IdUser); err != nil {
 		return fmt.Errorf("can't remove page: %w", err)
 	}
 
@@ -70,11 +70,11 @@ func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
 
 // IsExists checks if page exists in storage
 func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error) {
-	q := `select COUNT(*) from pages where url = ? and user_name = ? and id_user = ?`
+	q := `select COUNT(*) from pages where url = ? and id_user = ?`
 
 	var count int
 
-	if err := s.db.QueryRowContext(ctx, q, page.URL, page.UserName, page.IdUser).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, q, page.URL, page.IdUser).Scan(&count); err != nil {
 		return false, fmt.Errorf("can't check if page exists: %w", err)
 	}
 
