@@ -16,16 +16,16 @@ const (
 	StartCmd = "/start"
 )
 
-func (p *Processor) doCmd(text string, chatID int, username string) error {
+func (p *Processor) doCmd(text string, chatID int, username string, idUser int) error {
 	text = strings.TrimSpace(text)
 	log.Printf("got new command '%s' from '%s", text, username)
 
 	if isAddCmd(text) {
-		return p.savePage(chatID, text, username)
+		return p.savePage(chatID, text, username, idUser)
 	}
 	switch text {
 	case RndCmd:
-		return p.sendRandom(chatID, username)
+		return p.sendRandom(chatID, username, idUser)
 	case HelpCmd:
 		return p.sendHelp(chatID)
 	case StartCmd:
@@ -36,12 +36,13 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 
 }
 
-func (p *Processor) savePage(chatID int, pageURL string, username string) (err error) {
+func (p *Processor) savePage(chatID int, pageURL string, username string, idUser int) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: save page", err) }()
 
 	page := &storage.Page{
 		URL:      pageURL,
 		UserName: username,
+		IdUser:   idUser,
 	}
 
 	isExists, err := p.storage.IsExists(context.Background(), page)
@@ -64,10 +65,10 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	return nil
 }
 
-func (p *Processor) sendRandom(chatID int, username string) (err error) {
+func (p *Processor) sendRandom(chatID int, username string, idUser int) (err error) {
 	defer func() { err = e.WrapIfErr("can't do command: can't send random", err) }()
 
-	page, err := p.storage.PickRandom(context.Background(), username)
+	page, err := p.storage.PickRandom(context.Background(), username, idUser)
 	if err != nil && !errors.Is(err, storage.ErrNoSavedPages) {
 		return err
 	}

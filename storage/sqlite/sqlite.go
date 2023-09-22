@@ -28,21 +28,21 @@ func New(path string) (*Storage, error) {
 
 // Save saves page to storage
 func (s *Storage) Save(ctx context.Context, p *storage.Page) error {
-	q := `Insert into pages (url, user_name) values (?,?)`
+	q := `Insert into pages (url, user_name,id_user) values (?,?,?)`
 
-	if _, err := s.db.ExecContext(ctx, q, p.URL, p.UserName); err != nil {
+	if _, err := s.db.ExecContext(ctx, q, p.URL, p.UserName, p.IdUser); err != nil {
 		return fmt.Errorf("can't save page: %w", err)
 	}
 	return nil
 }
 
 // PickRandom picks random page from storage
-func (s *Storage) PickRandom(ctx context.Context, userName string) (*storage.Page, error) {
-	q := `SELECT url from pages where user_name = ? order by RANDOM() LIMIT 1`
+func (s *Storage) PickRandom(ctx context.Context, userName string, idUser int) (*storage.Page, error) {
+	q := `SELECT url from pages where id_user = ? order by RANDOM() LIMIT 1`
 
 	var url string
 
-	err := s.db.QueryRowContext(ctx, q, userName).Scan(&url)
+	err := s.db.QueryRowContext(ctx, q, idUser).Scan(&url)
 	if err == sql.ErrNoRows {
 		return nil, storage.ErrNoSavedPages
 	}
@@ -53,14 +53,15 @@ func (s *Storage) PickRandom(ctx context.Context, userName string) (*storage.Pag
 	return &storage.Page{
 		URL:      url,
 		UserName: userName,
+		IdUser:   idUser,
 	}, nil
 }
 
 // Remove removes page from storage
 func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
-	q := `Delete from pages where url = ? and user_name = ?`
+	q := `Delete from pages where url = ? and id_user = ?`
 
-	if _, err := s.db.ExecContext(ctx, q, page.URL, page.UserName); err != nil {
+	if _, err := s.db.ExecContext(ctx, q, page.URL, page.IdUser); err != nil {
 		return fmt.Errorf("can't remove page: %w", err)
 	}
 
@@ -69,11 +70,11 @@ func (s *Storage) Remove(ctx context.Context, page *storage.Page) error {
 
 // IsExists checks if page exists in storage
 func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error) {
-	q := `select COUNT(*) from pages where url = ? and user_name = ?`
+	q := `select COUNT(*) from pages where url = ? and id_user = ?`
 
 	var count int
 
-	if err := s.db.QueryRowContext(ctx, q, page.URL, page.UserName).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, q, page.URL, page.IdUser).Scan(&count); err != nil {
 		return false, fmt.Errorf("can't check if page exists: %w", err)
 	}
 
@@ -81,7 +82,7 @@ func (s *Storage) IsExists(ctx context.Context, page *storage.Page) (bool, error
 }
 
 func (s *Storage) Init(ctx context.Context) error {
-	q := `Create table if not exists pages (url text, user_name text)`
+	q := `Create table if not exists pages (url text, user_name text, id_user INT)`
 
 	_, err := s.db.ExecContext(ctx, q)
 	if err != nil {

@@ -17,6 +17,7 @@ type Processor struct {
 type Meta struct {
 	ChatID   int
 	Username string
+	IdUser   int
 }
 
 var ErrUnknownEventType = errors.New("unknown event type")
@@ -61,7 +62,7 @@ func (p *Processor) processMessage(event events.Event) error {
 	if err != nil {
 		return e.Wrap("can't process message", err)
 	}
-	if err := p.doCmd(event.Text, meta.ChatID, meta.Username); err != nil {
+	if err := p.doCmd(event.Text, meta.ChatID, meta.Username, meta.IdUser); err != nil {
 		return e.Wrap("can't process message", err)
 	}
 
@@ -88,6 +89,7 @@ func event(upd telegram.Update) events.Event {
 		res.Meta = Meta{
 			ChatID:   upd.Message.Chat.ID,
 			Username: upd.Message.From.Username,
+			IdUser:   upd.Message.From.ID,
 		}
 	}
 
